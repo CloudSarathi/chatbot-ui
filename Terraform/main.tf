@@ -2,55 +2,55 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_vpc" "microdegree_vpc" {
+resource "aws_vpc" "openai_vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name = "microdegree-vpc"
+    Name = "openai-vpc"
   }
 }
 
-resource "aws_subnet" "microdegree_subnet" {
+resource "aws_subnet" "openai_subnet" {
   count = 2
-  vpc_id                  = aws_vpc.microdegree_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.microdegree_vpc.cidr_block, 8, count.index)
+  vpc_id                  = aws_vpc.openai_vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.openai_vpc.cidr_block, 8, count.index)
   availability_zone       = element(["us-east-1a", "us-east-1b"], count.index)
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "microdegree-subnet-${count.index}"
+    Name = "openai-subnet-${count.index}"
   }
 }
 
-resource "aws_internet_gateway" "microdegree_igw" {
-  vpc_id = aws_vpc.microdegree_vpc.id
+resource "aws_internet_gateway" "openai_igw" {
+  vpc_id = aws_vpc.openai_vpc.id
 
   tags = {
-    Name = "microdegree-igw"
+    Name = "openai-igw"
   }
 }
 
-resource "aws_route_table" "microdegree_route_table" {
-  vpc_id = aws_vpc.microdegree_vpc.id
+resource "aws_route_table" "openai_route_table" {
+  vpc_id = aws_vpc.openai_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.microdegree_igw.id
+    gateway_id = aws_internet_gateway.openai_igw.id
   }
 
   tags = {
-    Name = "microdegree-route-table"
+    Name = "openai-route-table"
   }
 }
 
 resource "aws_route_table_association" "a" {
   count          = 2
-  subnet_id      = aws_subnet.microdegree_subnet[count.index].id
-  route_table_id = aws_route_table.microdegree_route_table.id
+  subnet_id      = aws_subnet.openai_subnet[count.index].id
+  route_table_id = aws_route_table.openai_route_table.id
 }
 
-resource "aws_security_group" "microdegree_cluster_sg" {
-  vpc_id = aws_vpc.microdegree_vpc.id
+resource "aws_security_group" "openai_cluster_sg" {
+  vpc_id = aws_vpc.openai_vpc.id
 
   egress {
     from_port   = 0
@@ -60,12 +60,12 @@ resource "aws_security_group" "microdegree_cluster_sg" {
   }
 
   tags = {
-    Name = "microdegree-cluster-sg"
+    Name = "openai-cluster-sg"
   }
 }
 
-resource "aws_security_group" "microdegree_node_sg" {
-  vpc_id = aws_vpc.microdegree_vpc.id
+resource "aws_security_group" "openai_node_sg" {
+  vpc_id = aws_vpc.openai_vpc.id
 
   ingress {
     from_port   = 0
@@ -82,25 +82,25 @@ resource "aws_security_group" "microdegree_node_sg" {
   }
 
   tags = {
-    Name = "microdegree-node-sg"
+    Name = "openai-node-sg"
   }
 }
 
-resource "aws_eks_cluster" "microdegree" {
-  name     = "microdegree-cluster"
-  role_arn = aws_iam_role.microdegree_cluster_role.arn
+resource "aws_eks_cluster" "openai" {
+  name     = "openai-cluster"
+  role_arn = aws_iam_role.openai_cluster_role.arn
 
   vpc_config {
-    subnet_ids         = aws_subnet.microdegree_subnet[*].id
-    security_group_ids = [aws_security_group.microdegree_cluster_sg.id]
+    subnet_ids         = aws_subnet.openai_subnet[*].id
+    security_group_ids = [aws_security_group.openai_cluster_sg.id]
   }
 }
 
-resource "aws_eks_node_group" "microdegree" {
-  cluster_name    = aws_eks_cluster.microdegree.name
-  node_group_name = "microdegree-node-group"
-  node_role_arn   = aws_iam_role.microdegree_node_group_role.arn
-  subnet_ids      = aws_subnet.microdegree_subnet[*].id
+resource "aws_eks_node_group" "openai" {
+  cluster_name    = aws_eks_cluster.openai.name
+  node_group_name = "openai-node-group"
+  node_role_arn   = aws_iam_role.openai_node_group_role.arn
+  subnet_ids      = aws_subnet.openai_subnet[*].id
 
   scaling_config {
     desired_size = 3
@@ -112,12 +112,12 @@ resource "aws_eks_node_group" "microdegree" {
 
   remote_access {
     ec2_ssh_key = var.ssh_key_name
-    source_security_group_ids = [aws_security_group.microdegree_node_sg.id]
+    source_security_group_ids = [aws_security_group.openai_node_sg.id]
   }
 }
 
-resource "aws_iam_role" "microdegree_cluster_role" {
-  name = "microdegree-cluster-role"
+resource "aws_iam_role" "openai_cluster_role" {
+  name = "openai-cluster-role"
 
   assume_role_policy = <<EOF
 {
@@ -135,13 +135,13 @@ resource "aws_iam_role" "microdegree_cluster_role" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "microdegree_cluster_role_policy" {
-  role       = aws_iam_role.microdegree_cluster_role.name
+resource "aws_iam_role_policy_attachment" "openai_cluster_role_policy" {
+  role       = aws_iam_role.openai_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-resource "aws_iam_role" "microdegree_node_group_role" {
-  name = "microdegree-node-group-role"
+resource "aws_iam_role" "openai_node_group_role" {
+  name = "openai-node-group-role"
 
   assume_role_policy = <<EOF
 {
@@ -159,17 +159,17 @@ resource "aws_iam_role" "microdegree_node_group_role" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "microdegree_node_group_role_policy" {
-  role       = aws_iam_role.microdegree_node_group_role.name
+resource "aws_iam_role_policy_attachment" "openai_node_group_role_policy" {
+  role       = aws_iam_role.openai_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "microdegree_node_group_cni_policy" {
-  role       = aws_iam_role.microdegree_node_group_role.name
+resource "aws_iam_role_policy_attachment" "openai_node_group_cni_policy" {
+  role       = aws_iam_role.openai_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-resource "aws_iam_role_policy_attachment" "microdegree_node_group_registry_policy" {
-  role       = aws_iam_role.microdegree_node_group_role.name
+resource "aws_iam_role_policy_attachment" "openai_node_group_registry_policy" {
+  role       = aws_iam_role.openai_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
