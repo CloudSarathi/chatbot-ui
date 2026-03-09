@@ -13,7 +13,7 @@ pipeline {
             steps {
                 script {
                     dir("terraform") {
-                        git branch: 'main', url: 'https://github.com/anilkumar-n-061/Jio-hotstar-DevSecOps-Project.git'
+                        git branch: 'pro', url: 'https://github.com/CloudSarathi/chatbot-ui.git'
                     }
                 }
             }
