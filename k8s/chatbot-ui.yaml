@@ -10,7 +10,7 @@ metadata:
   name: openai
 type: Opaque
 data:
-  OPENAI_API_KEY: <base64 encoded key>
+  OPENAI_API_KEY: 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
 ---
 apiVersion: apps/v1
 kind: Deployment
