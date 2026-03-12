@@ -7,10 +7,11 @@ apiVersion: v1
 kind: Secret
 metadata:
   namespace: openai
-  name: openai
+  name: openai-secrets
 type: Opaque
-data:
-  OPENAI_API_KEY: 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
+stringData::
+  OPENAI_API_KEY: "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"
+  OTHER_CONFIG: "some-plain-text-value"
 ---
 apiVersion: apps/v1
 kind: Deployment
